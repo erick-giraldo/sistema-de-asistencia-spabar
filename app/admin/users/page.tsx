@@ -201,13 +201,18 @@ export default function UsersPage() {
                 body: JSON.stringify({ id })
             })
 
+            const data = await response.json()
+
             if (response.ok) {
                 await loadUsers()
                 alert('Usuario eliminado correctamente')
+            } else {
+                console.error('Error del servidor:', data)
+                alert(`Error al eliminar usuario: ${data.error || 'Error desconocido'}`)
             }
         } catch (error) {
             console.error('Error eliminando usuario:', error)
-            alert('Error al eliminar usuario')
+            alert(`Error al eliminar usuario: ${error}`)
         }
     }
 
