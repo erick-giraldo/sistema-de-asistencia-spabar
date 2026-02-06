@@ -22,9 +22,16 @@ type CurrentUser = {
 }
 
 // En tus tipos
-type Role = {
-    role: 'admin' | 'viewer' | 'super_admin' | 'moderator'
-}
+type Role = 'admin' | 'viewer' | 'super_admin' | 'moderator'
+
+// Configuración de roles
+const roleConfig: { value: Role; label: string; description: string; requiresSuperAdmin?: boolean }[] = [
+    { value: 'viewer', label: 'Visualizador', description: 'solo ver' },
+    { value: 'admin', label: 'Administrador', description: 'editar' },
+    { value: 'moderator', label: 'Moderador', description: 'gestión moderada' },
+    { value: 'super_admin', label: 'Super Admin', description: 'todo', requiresSuperAdmin: true },
+]
+
 export default function UsersPage() {
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
     const [users, setUsers] = useState<User[]>([])
@@ -32,11 +39,16 @@ export default function UsersPage() {
     const [editingId, setEditingId] = useState<number | null>(null)
     const [editForm, setEditForm] = useState<Partial<User>>({})
     const [showAddForm, setShowAddForm] = useState(false)
-    const [newUser, setNewUser] = useState({
+    const [newUser, setNewUser] = useState<{
+        username: string
+        password: string
+        full_name: string
+        role: Role
+    }>({
         username: '',
         password: '',
         full_name: '',
-        role: 'viewer' as 'admin' | 'viewer' | 'super_admin'
+        role: 'viewer'
     })
 
     const router = useRouter()
@@ -199,7 +211,7 @@ export default function UsersPage() {
         }
     }
 
-    const getRoleBadge = (role: string) => {
+    const getRoleBadge = (role: Role) => {
         const badges = {
             super_admin: { text: 'Super Admin', color: 'bg-purple-600 text-white' },
             admin: { text: 'Administrador', color: 'bg-blue-600 text-white' },
@@ -304,14 +316,20 @@ export default function UsersPage() {
                                     <label className="block text-sm font-medium mb-1">Rol *</label>
                                     <select
                                         value={newUser.role}
-                                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
+                                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value as Role })}
                                         className="w-full px-3 py-2 border rounded-lg"
                                     >
-                                        <option value="viewer">Visualizador (solo ver)</option>
-                                        <option value="admin">Administrador (editar)</option>
-                                        {currentUser?.role === 'super_admin' && (
-                                            <option value="super_admin">Super Admin (todo)</option>
-                                        )}
+                                        {roleConfig.map((role) => {
+                                            // Solo mostrar super_admin si el usuario actual es super_admin
+                                            if (role.requiresSuperAdmin && currentUser?.role !== 'super_admin') {
+                                                return null
+                                            }
+                                            return (
+                                                <option key={role.value} value={role.value}>
+                                                    {role.label} ({role.description})
+                                                </option>
+                                            )
+                                        })}
                                     </select>
                                 </div>
                             </div>
@@ -362,14 +380,20 @@ export default function UsersPage() {
                                                     <td className="px-6 py-4">
                                                         <select
                                                             value={editForm.role || 'viewer'}
-                                                            onChange={(e) => setEditForm({ ...editForm, role: e.target.value as any })}
+                                                            onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
                                                             className="w-full px-2 py-1 border rounded"
                                                         >
-                                                            <option value="viewer">Visualizador</option>
-                                                            <option value="admin">Administrador</option>
-                                                            {currentUser?.role === 'super_admin' && (
-                                                                <option value="super_admin">Super Admin</option>
-                                                            )}
+                                                            {roleConfig.map((role) => {
+                                                                // Solo mostrar super_admin si el usuario actual es super_admin
+                                                                if (role.requiresSuperAdmin && currentUser?.role !== 'super_admin') {
+                                                                    return null
+                                                                }
+                                                                return (
+                                                                    <option key={role.value} value={role.value}>
+                                                                        {role.label}
+                                                                    </option>
+                                                                )
+                                                            })}
                                                         </select>
                                                     </td>
                                                     <td className="px-6 py-4">
