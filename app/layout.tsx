@@ -7,6 +7,10 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Spabar - Sistema de Asistencia',
   description: 'Sistema de control de asistencia para empleados de Spabar',
+  icons: {
+    icon: '/icons/favicon.ico',        // o '/favicon.png'
+    apple: '/icons/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({

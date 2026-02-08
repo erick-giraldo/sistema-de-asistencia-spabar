@@ -3,37 +3,8 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInMinutes, getWeek } from 'date-fns'
-
-type Transaction = {
-  idEmpleado: string
-  nombre: string
-  departamento: string
-  fecha: string
-  hora: string
-}
-
-type Schedule = {
-  id: number
-  name: string
-  department: string
-  entryTime: string
-  exitTime: string
-  scheduledHours: number
-}
-
-type AttendanceRecord = {
-  nombre: string
-  fecha: string
-  entradaReal: string
-  salidaReal: string
-  horasTrabajadas: number
-  minTardanza: number
-  horasExtra: number
-  horasProgramadas: number
-  alerta: string
-  asistencia: string
-  semana: number
-}
+import AttendanceTable from '@/components/AttendanceTable'
+import { Transaction, Schedule, AttendanceRecord } from '@/app/types'
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
@@ -182,94 +153,97 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Sistema de Asistencia Spabar</h1>
-            <p className="text-gray-600">Procesa archivos de transacciones y genera reportes de asistencia</p>
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                Sistema de Asistencia Spabar
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Procesa archivos de transacciones y genera reportes de asistencia
+              </p>
+            </div>
+            <a
+              href="/admin"
+              className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
+            >
+              Panel Admin
+            </a>
           </div>
-          <a
-            href="/admin"
-            className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition"
-          >
-            Panel Admin
-          </a>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <h2 className="text-2xl font-semibold mb-6">Subir Archivo de Transacciones</h2>
-          
-          <div className="mb-6">
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Selecciona el archivo Excel (.xlsx)
-            </label>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none p-2.5"
-            />
-          </div>
+        {/* Upload Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">
+            Subir Archivo de Transacciones
+          </h2>
 
-          <button
-            onClick={processFile}
-            disabled={!file || processing}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {processing ? 'Procesando...' : 'Procesar Archivo'}
-          </button>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Selecciona el archivo Excel (.xlsx)
+              </label>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+              />
+              {file && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Archivo seleccionado: <span className="font-medium">{file.name}</span>
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={processFile}
+              disabled={!file || processing}
+              className="w-full sm:w-auto px-8 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              {processing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Procesando...
+                </span>
+              ) : (
+                'Procesar Archivo'
+              )}
+            </button>
+          </div>
         </div>
 
+        {/* Results Section */}
         {result && (
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">Resultado del Análisis</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                  Resultado del Análisis
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {result.length} registro{result.length !== 1 ? 's' : ''} procesado{result.length !== 1 ? 's' : ''}
+                </p>
+              </div>
               <button
                 onClick={downloadResult}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
+                className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
               >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 Descargar Excel
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrada</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Salida</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hrs Trab</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tardanza</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hrs Extra</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alerta</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Semana</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {result.map((record, idx) => (
-                    <tr key={idx} className={record.alerta ? 'bg-red-50' : ''}>
-                      <td className="px-4 py-3 text-sm">{record.nombre}</td>
-                      <td className="px-4 py-3 text-sm">{record.fecha}</td>
-                      <td className="px-4 py-3 text-sm">{record.entradaReal}</td>
-                      <td className="px-4 py-3 text-sm">{record.salidaReal}</td>
-                      <td className="px-4 py-3 text-sm">{record.horasTrabajadas}h</td>
-                      <td className="px-4 py-3 text-sm">{record.minTardanza}m</td>
-                      <td className="px-4 py-3 text-sm">{record.horasExtra}h</td>
-                      <td className="px-4 py-3 text-sm">
-                        {record.alerta && (
-                          <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded">
-                            {record.alerta}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm">{record.semana}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <AttendanceTable records={result} />
             </div>
           </div>
         )}

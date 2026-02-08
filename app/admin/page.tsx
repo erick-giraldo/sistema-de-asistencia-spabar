@@ -2,24 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import ScheduleTable from '@/components/ScheduleTable'
+import AddScheduleForm from '@/components/AddScheduleForm'
+import Pagination from '@/components/Pagination'
+import { Schedule, User, Permissions } from '@/app/types'
 
-type Schedule = {
-    id: number
-    name: string
-    department: string
-    entryTime: string
-    exitTime: string
-    scheduledHours: number
-}
-
-type User = {
-    id: number
-    username: string
-    fullName: string
-    role: 'admin' | 'viewer' | 'super_admin'
-}
-
-export default function AdminPage() {
+export default function AdminSchedule() {
     const [isLoading, setIsLoading] = useState(true)
     const [authenticated, setAuthenticated] = useState(false)
     const [user, setUser] = useState<User | null>(null)
@@ -46,17 +34,15 @@ export default function AdminPage() {
 
     const router = useRouter()
 
-    // ============================================
-    // CONTROL DE PERMISOS BASADO EN ROL
-    // ============================================
-    const permissions = useMemo(() => {
+    // Control de permisos
+    const permissions: Permissions = useMemo(() => {
         if (!user) return { canView: false, canAdd: false, canEdit: false, canDelete: false }
 
         return {
-            canView: true, // Todos pueden ver
+            canView: true,
             canAdd: user.role === 'admin' || user.role === 'super_admin',
             canEdit: user.role === 'admin' || user.role === 'super_admin',
-            canDelete: user.role === 'super_admin', // Solo super_admin puede eliminar
+            canDelete: user.role === 'super_admin',
         }
     }, [user])
 
@@ -270,36 +256,6 @@ export default function AdminPage() {
         setCurrentPage(1)
     }, [searchTerm, itemsPerPage])
 
-    const getPageNumbers = () => {
-        const pages = []
-        const maxVisible = 5
-
-        if (totalPages <= maxVisible) {
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(i)
-            }
-        } else {
-            if (currentPage <= 3) {
-                for (let i = 1; i <= 4; i++) pages.push(i)
-                pages.push('...')
-                pages.push(totalPages)
-            } else if (currentPage >= totalPages - 2) {
-                pages.push(1)
-                pages.push('...')
-                for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i)
-            } else {
-                pages.push(1)
-                pages.push('...')
-                for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i)
-                pages.push('...')
-                pages.push(totalPages)
-            }
-        }
-
-        return pages
-    }
-
-    // Función para obtener el badge de rol
     const getRoleBadge = (role: string) => {
         const badges = {
             super_admin: { text: 'Super Admin', color: 'bg-purple-600 text-white' },
@@ -307,7 +263,11 @@ export default function AdminPage() {
             viewer: { text: 'Visualizador', color: 'bg-gray-600 text-white' }
         }
         const badge = badges[role as keyof typeof badges] || badges.viewer
-        return <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>{badge.text}</span>
+        return (
+            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
+                {badge.text}
+            </span>
+        )
     }
 
     if (isLoading && !authenticated) {
@@ -320,35 +280,41 @@ export default function AdminPage() {
 
     if (!authenticated) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
-                <div className="bg-white p-8 rounded-lg shadow-2xl w-96">
-                    <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Panel de Administración</h1>
-                    <form onSubmit={handleLogin}>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Usuario</label>
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600 p-4">
+                <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
+                    <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+                        Panel de Administración
+                    </h1>
+                    <form onSubmit={handleLogin} className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Usuario
+                            </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                 placeholder="Deissy"
                                 disabled={isLoading}
                             />
                         </div>
-                        <div className="mb-6">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Contraseña
+                            </label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                 placeholder="Meraki 2060"
                                 disabled={isLoading}
                             />
                         </div>
 
                         {loginError && (
-                            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
                                 {loginError}
                             </div>
                         )}
@@ -356,369 +322,168 @@ export default function AdminPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="w-full py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                         >
                             {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                         </button>
+
+                        <button
+                            type="button"
+                            onClick={() => router.push('/')}
+                            disabled={isLoading}
+                            className="w-full py-3 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:bg-gray-100 transition-colors"
+                        >
+                            Volver al Inicio
+                        </button>
                     </form>
-                    <button
-                        onClick={() => router.push('/')}
-                        disabled={isLoading}
-                        className="w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition disabled:bg-gray-100"
-                    >
-                        Volver al Inicio
-                    </button>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-900">Panel de Administración</h1>
-                        {user && (
-                            <div className="flex items-center gap-3 mt-2">
-                                <p className="text-gray-600">
-                                    Bienvenido, <span className="font-semibold">{user.fullName || user.username}</span>
-                                </p>
-                                {getRoleBadge(user.role)}
-                            </div>
-                        )}
-                    </div>
-                    <div className="space-x-4 flex items-center">
-                        {permissions.canAdd && (
+                {/* Header */}
+                <div className="mb-6 sm:mb-8">
+                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+                        <div className="flex-1">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                                Panel de Administración
+                            </h1>
+                            {user && (
+                                <div className="flex flex-wrap items-center gap-3 mt-2">
+                                    <p className="text-sm sm:text-base text-gray-600">
+                                        Bienvenido, <span className="font-semibold">{user.fullName || user.username}</span>
+                                    </p>
+                                    {getRoleBadge(user.role)}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            {permissions.canAdd && (
+                                <button
+                                    onClick={() => router.push('/admin/users')}
+                                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
+                                >
+                                    Gestionar Usuarios
+                                </button>
+                            )}
                             <button
-                                onClick={() => router.push('/admin/users')}
-                                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition"
+                                onClick={() => router.push('/')}
+                                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                             >
-                                Gestionar Usuarios
+                                Volver al Inicio
                             </button>
-                        )}
-                        <button
-                            onClick={() => router.push('/')}
-                            className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
-                        >
-                            Volver al Inicio
-                        </button>
-                        <button
-                            onClick={handleLogout}
-                            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
-                        >
-                            Cerrar Sesión
-                        </button>
+                            <button
+                                onClick={handleLogout}
+                                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                            >
+                                Cerrar Sesión
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Alerta para viewers */}
+                    {user?.role === 'viewer' && (
+                        <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
+                            <p className="font-semibold text-sm">⚠️ Acceso de Solo Lectura</p>
+                            <p className="text-xs mt-1">
+                                Tienes permisos de visualización únicamente. No puedes editar, agregar o eliminar horarios.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                {/* Alerta de permisos limitados para viewers */}
-                {user?.role === 'viewer' && (
-                    <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700">
-                        <p className="font-semibold">⚠️ Acceso de Solo Lectura</p>
-                        <p className="text-sm">Tienes permisos de visualización únicamente. No puedes editar, agregar o eliminar horarios.</p>
-                    </div>
-                )}
-
-                <div className="bg-white rounded-lg shadow-lg p-8">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-semibold">Gestión de Horarios</h2>
+                {/* Main Content */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                            Gestión de Horarios
+                        </h2>
                         {permissions.canAdd && (
                             <button
                                 onClick={() => setShowAddForm(!showAddForm)}
-                                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
+                                className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
                             >
-                                {showAddForm ? 'Cancelar' : 'Agregar Nuevo'}
+                                {showAddForm ? 'Cancelar' : '+ Agregar Nuevo'}
                             </button>
                         )}
                     </div>
 
+                    {/* Add Form */}
                     {showAddForm && permissions.canAdd && (
-                        <form onSubmit={addSchedule} className="mb-8 p-6 bg-green-50 rounded-lg">
-                            <h3 className="text-xl font-semibold mb-4">Nuevo Horario</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Nombre</label>
-                                    <input
-                                        type="text"
-                                        value={newSchedule.name}
-                                        onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Departamento</label>
-                                    <input
-                                        type="text"
-                                        value={newSchedule.department}
-                                        onChange={(e) => setNewSchedule({ ...newSchedule, department: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Hora de Entrada</label>
-                                    <input
-                                        type="time"
-                                        step="1"
-                                        value={newSchedule.entryTime?.substring(0, 5)}
-                                        onChange={(e) => setNewSchedule({ ...newSchedule, entryTime: e.target.value + ':00' })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Hora de Salida</label>
-                                    <input
-                                        type="time"
-                                        step="1"
-                                        value={newSchedule.exitTime?.substring(0, 5)}
-                                        onChange={(e) => setNewSchedule({ ...newSchedule, exitTime: e.target.value + ':00' })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Horas Programadas</label>
-                                    <input
-                                        type="number"
-                                        value={newSchedule.scheduledHours}
-                                        onChange={(e) => setNewSchedule({ ...newSchedule, scheduledHours: parseInt(e.target.value) })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    />
-                                </div>
-                            </div>
-                            <button
-                                type="submit"
-                                className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
-                            >
-                                Guardar Nuevo Horario
-                            </button>
-                        </form>
+                        <AddScheduleForm
+                            schedule={newSchedule}
+                            onChange={setNewSchedule}
+                            onSubmit={addSchedule}
+                            onCancel={() => setShowAddForm(false)}
+                        />
                     )}
 
-                    <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
-                        <div className="flex-1 min-w-[200px] max-w-md">
-                            <input
-                                type="text"
-                                placeholder="Buscar por nombre o departamento..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <label className="text-sm text-gray-700">Mostrar:</label>
-                                <select
-                                    value={itemsPerPage}
-                                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                >
-                                    <option value={5}>5</option>
-                                    <option value={10}>10</option>
-                                    <option value={25}>25</option>
-                                    <option value={50}>50</option>
-                                    <option value={100}>100</option>
-                                </select>
+                    {/* Search and Filters */}
+                    <div className="mb-6 space-y-4">
+                        <div className="flex flex-col lg:flex-row gap-4">
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nombre o departamento..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
                             </div>
 
-                            <div className="text-sm text-gray-700">
-                                Mostrando {startIndex + 1}-{Math.min(endIndex, filteredAndSortedSchedules.length)} de {filteredAndSortedSchedules.length}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm text-gray-700 font-medium whitespace-nowrap">
+                                        Mostrar:
+                                    </label>
+                                    <select
+                                        value={itemsPerPage}
+                                        onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    >
+                                        <option value={5}>5</option>
+                                        <option value={10}>10</option>
+                                        <option value={25}>25</option>
+                                        <option value={50}>50</option>
+                                        <option value={100}>100</option>
+                                    </select>
+                                </div>
+
+                                <div className="text-sm text-gray-600 text-center sm:text-left">
+                                    Mostrando {startIndex + 1}-{Math.min(endIndex, filteredAndSortedSchedules.length)} de {filteredAndSortedSchedules.length}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th
-                                        onClick={() => handleSort('id')}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                                    >
-                                        ID {sortField === 'id' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => handleSort('name')}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                                    >
-                                        Nombre {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => handleSort('department')}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                                    >
-                                        Departamento {sortField === 'department' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => handleSort('entryTime')}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                                    >
-                                        H. Entrada {sortField === 'entryTime' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => handleSort('exitTime')}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                                    >
-                                        H. Salida {sortField === 'exitTime' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => handleSort('scheduledHours')}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                                    >
-                                        Hrs Prog. {sortField === 'scheduledHours' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {currentSchedules.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                                            {searchTerm ? 'No se encontraron resultados' : 'No hay horarios registrados'}
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    currentSchedules.map((schedule) => (
-                                        <tr key={schedule.id} className="hover:bg-gray-50">
-                                            {editingId === schedule.id ? (
-                                                <>
-                                                    <td className="px-6 py-4">{schedule.id}</td>
-                                                    <td className="px-6 py-4">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.name || ''}
-                                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                                            className="w-full px-2 py-1 border rounded"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.department || ''}
-                                                            onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                                                            className="w-full px-2 py-1 border rounded"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <input
-                                                            type="time"
-                                                            step="1"
-                                                            value={editForm.entryTime?.substring(0, 5) || ''}
-                                                            onChange={(e) => setEditForm({ ...editForm, entryTime: e.target.value + ':00' })}
-                                                            className="w-full px-2 py-1 border rounded"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <input
-                                                            type="time"
-                                                            step="1"
-                                                            value={editForm.exitTime?.substring(0, 5) || ''}
-                                                            onChange={(e) => setEditForm({ ...editForm, exitTime: e.target.value + ':00' })}
-                                                            className="w-full px-2 py-1 border rounded"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <input
-                                                            type="number"
-                                                            value={editForm.scheduledHours || ''}
-                                                            onChange={(e) => setEditForm({ ...editForm, scheduledHours: parseInt(e.target.value) })}
-                                                            className="w-full px-2 py-1 border rounded"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <button
-                                                            onClick={saveEdit}
-                                                            className="bg-blue-600 text-white px-3 py-1 rounded mr-2 hover:bg-blue-700"
-                                                        >
-                                                            Guardar
-                                                        </button>
-                                                        <button
-                                                            onClick={cancelEdit}
-                                                            className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
-                                                        >
-                                                            Cancelar
-                                                        </button>
-                                                    </td>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <td className="px-6 py-4 text-sm">{schedule.id}</td>
-                                                    <td className="px-6 py-4 text-sm font-medium">{schedule.name}</td>
-                                                    <td className="px-6 py-4 text-sm">{schedule.department}</td>
-                                                    <td className="px-6 py-4 text-sm">{schedule.entryTime}</td>
-                                                    <td className="px-6 py-4 text-sm">{schedule.exitTime}</td>
-                                                    <td className="px-6 py-4 text-sm">{schedule.scheduledHours}h</td>
-                                                    <td className="px-6 py-4 text-sm">
-                                                        {permissions.canEdit && (
-                                                            <button
-                                                                onClick={() => startEdit(schedule)}
-                                                                className="bg-yellow-500 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-600"
-                                                            >
-                                                                Editar
-                                                            </button>
-                                                        )}
-                                                        {permissions.canDelete && (
-                                                            <button
-                                                                onClick={() => deleteSchedule(schedule.id)}
-                                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                                                            >
-                                                                Eliminar
-                                                            </button>
-                                                        )}
-                                                        {!permissions.canEdit && !permissions.canDelete && (
-                                                            <span className="text-gray-400 italic text-xs">Sin permisos</span>
-                                                        )}
-                                                    </td>
-                                                </>
-                                            )}
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                    {/* Table */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+                        <ScheduleTable
+                            schedules={currentSchedules}
+                            editingId={editingId}
+                            editForm={editForm}
+                            permissions={permissions}
+                            onEdit={startEdit}
+                            onSave={saveEdit}
+                            onCancel={cancelEdit}
+                            onDelete={deleteSchedule}
+                            onEditFormChange={setEditForm}
+                            sortField={sortField}
+                            sortDirection={sortDirection}
+                            onSort={handleSort}
+                        />
                     </div>
 
-                    {totalPages > 1 && (
-                        <div className="mt-6 flex items-center justify-between">
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Anterior
-                            </button>
-
-                            <div className="flex gap-2">
-                                {getPageNumbers().map((page, index) => (
-                                    page === '...' ? (
-                                        <span key={`ellipsis-${index}`} className="px-3 py-2">...</span>
-                                    ) : (
-                                        <button
-                                            key={page}
-                                            onClick={() => setCurrentPage(page as number)}
-                                            className={`px-4 py-2 rounded-lg ${currentPage === page
-                                                ? 'bg-blue-600 text-white'
-                                                : 'border border-gray-300 hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            {page}
-                                        </button>
-                                    )
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                disabled={currentPage === totalPages}
-                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Siguiente
-                            </button>
-                        </div>
-                    )}
+                    {/* Pagination */}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </div>
         </div>
