@@ -5,10 +5,12 @@ import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInMinutes, getWeek } from 'date-fns'
 import AttendanceTable from '@/components/AttendanceTable'
 import { Transaction, Schedule, AttendanceRecord } from '@/app/types'
+import { Button } from '@/components/ui/Button'
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
+  console.log("🚀 ~ Home ~ processing:", processing)
   const [result, setResult] = useState<AttendanceRecord[] | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,6 +201,25 @@ export default function Home() {
               )}
             </div>
 
+            {/* <Button
+              loading={processing}
+              message="Procesando..."
+              messageBefore="Procesar Archivo"
+              onSubmit={processFile}
+            /> */}
+
+            <Button
+              onClick={processFile}
+              responsive  // w-full sm:w-auto
+              size="xl"   // px-8 py-3
+              variant="primary"  // bg-blue-600
+              loading={processing}
+              disabled={!file || processing}
+              loadingText={"Procesando..."}
+            >
+              Procesar Archivo
+            </Button>
+            {/* 
             <button
               onClick={processFile}
               disabled={!file || processing}
@@ -215,7 +236,8 @@ export default function Home() {
               ) : (
                 'Procesar Archivo'
               )}
-            </button>
+            </button> */}
+
           </div>
         </div>
 
@@ -248,6 +270,6 @@ export default function Home() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }

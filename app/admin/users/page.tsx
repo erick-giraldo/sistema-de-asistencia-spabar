@@ -239,14 +239,14 @@ export default function UsersPage() {
         )
     }
 
-    // if (isLoading) {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
-            {/* <div className="text-white text-2xl">Cargando...</div> */}
-            <SpabarLoader ring={false} />
-        </div>
-    )
-    // }
+    if (isLoading) {
+        return (
+            // <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
+            // <div className="text-white text-2xl">Cargando...</div>
+            < SpabarLoader />
+            // </div>
+        )
+    }
 
     if (!currentUser) {
         return null

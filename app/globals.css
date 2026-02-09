@@ -15,117 +15,26 @@ body {
       rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
 }
 
-/* Ring: constante y suave */
-@keyframes spabar-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+@keyframes gif-repeat {
 
-.animate-spabar-spin {
-  animation: spabar-spin 0.95s linear infinite;
-  will-change: transform;
-}
-
-/* Glow: sin pausas marcadas */
-@keyframes spabar-glow {
-  0% {
-    transform: scale(0.96);
-    opacity: 0.22;
-  }
-
-  35% {
-    transform: scale(1.06);
-    opacity: 0.42;
-  }
-
-  65% {
-    transform: scale(1.02);
-    opacity: 0.32;
-  }
-
+  0%,
   100% {
-    transform: scale(0.96);
-    opacity: 0.22;
-  }
-}
-
-.animate-spabar-glow {
-  animation: spabar-glow 2.2s linear infinite;
-  will-change: transform, opacity;
-}
-
-/* Logo: fluido + MÁS zoom (sin frenar al final) */
-@keyframes spabar-logoZoom {
-  0% {
-    transform: translateZ(0) scale(0.92);
-  }
-
-  20% {
-    transform: translateZ(0) scale(1.10);
-  }
-
-  40% {
-    transform: translateZ(0) scale(0.98);
-  }
-
-  60% {
-    transform: translateZ(0) scale(1.14);
-  }
-
-  80% {
-    transform: translateZ(0) scale(1.03);
-  }
-
-  100% {
-    transform: translateZ(0) scale(0.92);
-  }
-}
-
-.animate-spabar-logoZoom {
-  animation: spabar-logoZoom 2.0s linear infinite;
-  will-change: transform;
-}
-
-/* Dots: uno a uno, continuo */
-@keyframes spabar-dot {
-  0% {
-    opacity: 0.18;
-    transform: translateY(0);
-  }
-
-  18% {
     opacity: 1;
-    transform: translateY(-2px);
   }
 
-  36% {
-    opacity: 0.22;
-    transform: translateY(0);
+  49.99% {
+    opacity: 1;
   }
 
-  100% {
-    opacity: 0.18;
-    transform: translateY(0);
+  50% {
+    opacity: 0;
+  }
+
+  50.01% {
+    opacity: 1;
   }
 }
 
-.spabar-dot {
-  display: inline-block;
-  min-width: 4px;
-  text-align: center;
-  animation: spabar-dot 0.9s linear infinite;
-  will-change: transform, opacity;
-}
-
-.spabar-dot-1 {
-  animation-delay: 0s;
-}
-
-.spabar-dot-2 {
-  animation-delay: 0.15s;
-}
-
-.spabar-dot-3 {
-  animation-delay: 0.3s;
+.spabar-anim-gif-repeat {
+  animation: gif-repeat 4s infinite;
 }
