@@ -40,7 +40,7 @@ export default function AdminPage() {
     }
 
     // Pantalla de carga inicial
-    if (!isInitializing) {
+    if (isInitializing) {
         return (
             // <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
             <SpabarLoader />
