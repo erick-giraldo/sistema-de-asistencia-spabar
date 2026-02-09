@@ -191,15 +191,17 @@ export default function UserTable({
                                                 >
                                                     Editar
                                                 </button>
-                                                <button
-                                                    onClick={() => onToggleStatus(user.id, user.is_active || false)}
-                                                    className={`px-3 py-1.5 text-xs font-medium text-white rounded focus:outline-none focus:ring-2 whitespace-nowrap ${user.is_active
-                                                        ? 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-500'
-                                                        : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
-                                                        }`}
-                                                >
-                                                    {user.is_active ? 'Desactivar' : 'Activar'}
-                                                </button>
+                                                {currentUser?.role === 'super_admin' && user.id !== currentUser.id && (
+                                                    <button
+                                                        onClick={() => onToggleStatus(user.id, user.is_active || false)}
+                                                        className={`px-3 py-1.5 text-xs font-medium text-white rounded focus:outline-none focus:ring-2 whitespace-nowrap ${user.is_active
+                                                            ? 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-500'
+                                                            : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
+                                                            }`}
+                                                    >
+                                                        {user.is_active ? 'Desactivar' : 'Activar'}
+                                                    </button>
+                                                )}
                                                 {currentUser?.role === 'super_admin' && user.id !== currentUser.id && (
                                                     <button
                                                         onClick={() => onDelete(user.id)}
