@@ -30,14 +30,10 @@ export default function Home() {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
       const data: any[] = XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
 
-      // Encontrar el encabezado
-      let headerRow = -1
-      for (let i = 0; i < data.length; i++) {
-        if (data[i][0] === 'ID Empleado' || data[i][0] === 'Empleado ID') {
-          headerRow = i
-          break
-        }
-      }
+      // Encontrar el encabezado sin usar bucles for
+      const headerRow = data.findIndex(
+        (row) => row[0] === 'ID Empleado' || row[0] === 'Empleado ID'
+      )
 
       if (headerRow === -1) {
         alert('No se encontró el encabezado en el archivo')
@@ -45,20 +41,37 @@ export default function Home() {
         return
       }
 
-      // Parsear transacciones
-      const transactions: Transaction[] = []
-      for (let i = headerRow + 1; i < data.length; i++) {
-        const row = data[i]
-        if (row[1] && row[3] && row[4]) {
-          transactions.push({
-            idEmpleado: String(row[0]),
-            nombre: String(row[1]),
-            departamento: String(row[2]),
-            fecha: String(row[3]),
-            hora: String(row[4])
-          })
-        }
+      // Encontrar índices de columnas dinámicamente (sin for)
+      const headers = data[headerRow]
+      const normalized = headers.map((h: any) => String(h ?? '').toLowerCase().trim())
+      const idEmpleadoIdx = normalized.findIndex((h: string) => h.includes('id') && h.includes('empleado'))
+      const nombreIdx = normalized.findIndex((h: string) => h === 'nombre')
+      const departamentoIdx = normalized.findIndex((h: string) => h === 'departamento')
+      const fechaIdx = normalized.findIndex((h: string) => h === 'fecha')
+      const horaIdx = normalized.findIndex((h: string) => h === 'hora')
+
+      // Validar que se encontraron todas las columnas necesarias
+      if (nombreIdx === -1 || fechaIdx === -1 || horaIdx === -1) {
+        alert('No se encontraron todas las columnas necesarias. Se requieren: Nombre, Fecha y Hora')
+        setProcessing(false)
+        return
       }
+
+      // Parsear transacciones (sin for)
+      const rows = data.slice(headerRow + 1)
+      const transactions: Transaction[] = rows
+        .map((row, idx) =>
+          row && row[nombreIdx] && row[fechaIdx] && row[horaIdx]
+            ? ({
+                idEmpleado: idEmpleadoIdx !== -1 ? String(row[idEmpleadoIdx]) : `${idx + headerRow + 1}`,
+                nombre: String(row[nombreIdx]),
+                departamento: departamentoIdx !== -1 ? String(row[departamentoIdx]) : 'N/A',
+                fecha: String(row[fechaIdx]),
+                hora: String(row[horaIdx])
+              } as Transaction)
+            : null
+        )
+        .filter((t): t is Transaction => Boolean(t))
 
       // Obtener horarios
       const schedulesResponse = await fetch('/api/schedules')
@@ -140,14 +153,28 @@ export default function Home() {
       'Fecha': r.fecha,
       'Entrada Real': r.entradaReal,
       'Salida Real': r.salidaReal,
-      'Horas Trabajadas': r.horasTrabajadas,
-      'Min Tardanza': r.minTardanza,
+      'Horas Trabajadas': r.horasTrabajadas, // convertido a formato horas abajo
+      'Tardanza (Horas)': r.minTardanza,     // convertido a formato horas abajo
       'Horas Extra': r.horasExtra,
       'Horas Programadas': r.horasProgramadas,
       'Alerta': r.alerta,
       'Asistencia': r.asistencia,
       'Semana': r.semana
     })))
+
+    // Formatear columnas E (Horas Trabajadas), F (Tardanza) y G (Horas Extra) como horas con segundos
+    // E, F, G corresponden a índices 4, 5 y 6 (0-based)
+    result.forEach((r, i) => {
+      const eAddr = XLSX.utils.encode_cell({ c: 4, r: i + 1 })
+      const fAddr = XLSX.utils.encode_cell({ c: 5, r: i + 1 })
+      const gAddr = XLSX.utils.encode_cell({ c: 6, r: i + 1 })
+      const horasTrab = r.horasTrabajadas
+      const tardanzaMin = r.minTardanza
+      const horasExtra = r.horasExtra
+      ;(ws as any)[eAddr] = { t: 'n', v: horasTrab / 24, z: '[h]:mm:ss' }
+      ;(ws as any)[fAddr] = { t: 'n', v: (tardanzaMin / 60) / 24, z: '[h]:mm:ss' }
+      ;(ws as any)[gAddr] = { t: 'n', v: horasExtra / 24, z: '[h]:mm:ss' }
+    })
 
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Asistencia_Detallada')

@@ -5,6 +5,16 @@ type AttendanceTableProps = {
 }
 
 export default function AttendanceTable({ records }: AttendanceTableProps) {
+    const pad2 = (n: number) => String(n).padStart(2, '0')
+    const hoursToHHMMSS = (hours: number) => {
+        const total = Math.round(hours * 3600)
+        const h = Math.floor(total / 3600)
+        const m = Math.floor((total % 3600) / 60)
+        const s = total % 60
+        return `${pad2(h)}:${pad2(m)}:${pad2(s)}`
+    }
+    const minutesToHHMMSS = (minutes: number) => hoursToHHMMSS(minutes / 60)
+
     return (
         <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -55,13 +65,13 @@ export default function AttendanceTable({ records }: AttendanceTableProps) {
                                 {record.salidaReal}
                             </td>
                             <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.horasTrabajadas}h
+                                {hoursToHHMMSS(record.horasTrabajadas)}
                             </td>
                             <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.minTardanza}m
+                                {minutesToHHMMSS(record.minTardanza)}
                             </td>
                             <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.horasExtra}h
+                                {hoursToHHMMSS(record.horasExtra)}
                             </td>
                             <td className="px-3 py-3 text-sm whitespace-nowrap">
                                 {record.alerta && (
