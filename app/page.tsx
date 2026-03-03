@@ -45,17 +45,37 @@ export default function Home() {
         return
       }
 
+      // Encontrar índices de columnas dinámicamente
+      const headers = data[headerRow]
+      let idEmpleadoIdx = -1, nombreIdx = -1, departamentoIdx = -1, fechaIdx = -1, horaIdx = -1
+
+      for (let j = 0; j < headers.length; j++) {
+        const header = String(headers[j]).toLowerCase().trim()
+        if (header.includes('id') && header.includes('empleado')) idEmpleadoIdx = j
+        if (header === 'nombre') nombreIdx = j
+        if (header === 'departamento') departamentoIdx = j
+        if (header === 'fecha') fechaIdx = j
+        if (header === 'hora') horaIdx = j
+      }
+
+      // Validar que se encontraron todas las columnas necesarias
+      if (nombreIdx === -1 || fechaIdx === -1 || horaIdx === -1) {
+        alert('No se encontraron todas las columnas necesarias. Se requieren: Nombre, Fecha y Hora')
+        setProcessing(false)
+        return
+      }
+
       // Parsear transacciones
       const transactions: Transaction[] = []
       for (let i = headerRow + 1; i < data.length; i++) {
         const row = data[i]
-        if (row[1] && row[3] && row[4]) {
+        if (row[nombreIdx] && row[fechaIdx] && row[horaIdx]) {
           transactions.push({
-            idEmpleado: String(row[0]),
-            nombre: String(row[1]),
-            departamento: String(row[2]),
-            fecha: String(row[3]),
-            hora: String(row[4])
+            idEmpleado: idEmpleadoIdx !== -1 ? String(row[idEmpleadoIdx]) : `${i}`,
+            nombre: String(row[nombreIdx]),
+            departamento: departamentoIdx !== -1 ? String(row[departamentoIdx]) : 'N/A',
+            fecha: String(row[fechaIdx]),
+            hora: String(row[horaIdx])
           })
         }
       }
