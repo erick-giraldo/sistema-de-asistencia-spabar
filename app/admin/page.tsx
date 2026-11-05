@@ -14,27 +14,33 @@ export default function AdminPage() {
         checkAuth()
     }, [])
 
-    const checkAuth = () => {
-        const storedUser = sessionStorage.getItem('user')
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('/api/auth')
 
-        if (storedUser) {
-            try {
-                const userData = JSON.parse(storedUser)
-                setUser(userData)
-            } catch (error) {
-                console.error('Error parsing user data:', error)
+            if (response.ok) {
+                const data = await response.json()
+                sessionStorage.setItem('user', JSON.stringify(data.user))
+                setUser(data.user)
+            } else {
                 sessionStorage.removeItem('user')
             }
+        } catch (error) {
+            console.error('Error verificando sesión:', error)
+            sessionStorage.removeItem('user')
+        } finally {
+            setIsInitializing(false)
         }
-
-        setIsInitializing(false)
     }
 
     const handleLoginSuccess = (userData: User) => {
         setUser(userData)
     }
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await fetch('/api/auth', { method: 'DELETE' }).catch((error) => {
+            console.error('Error cerrando sesión:', error)
+        })
         setUser(null)
         sessionStorage.removeItem('user')
     }

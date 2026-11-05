@@ -37,15 +37,17 @@ export default function UsersPage() {
     }, [])
 
     const checkAuth = async () => {
-        const storedUser = sessionStorage.getItem('user')
-
-        if (!storedUser) {
-            router.push('/admin')
-            return
-        }
-
         try {
-            const userData = JSON.parse(storedUser)
+            const response = await fetch('/api/auth')
+
+            if (!response.ok) {
+                sessionStorage.removeItem('user')
+                router.push('/admin')
+                return
+            }
+
+            const { user: userData } = await response.json()
+            sessionStorage.setItem('user', JSON.stringify(userData))
 
             // Solo admin y super_admin pueden acceder
             if (userData.role !== 'admin' && userData.role !== 'super_admin') {
@@ -67,6 +69,13 @@ export default function UsersPage() {
     const loadUsers = async () => {
         try {
             const response = await fetch('/api/users')
+
+            if (response.status === 401) {
+                sessionStorage.removeItem('user')
+                router.push('/admin')
+                return
+            }
+
             const data = await response.json()
             setUsers(data.users || [])
         } catch (error) {
@@ -278,7 +287,10 @@ export default function UsersPage() {
                                 ← Volver a Horarios
                             </button>
                             <button
-                                onClick={() => {
+                                onClick={async () => {
+                                    await fetch('/api/auth', { method: 'DELETE' }).catch((error) => {
+                                        console.error('Error cerrando sesión:', error)
+                                    })
                                     sessionStorage.removeItem('user')
                                     router.push('/admin')
                                 }}
