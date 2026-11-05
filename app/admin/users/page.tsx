@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import AppHeader from '@/components/AppHeader'
 import UserTable from '@/components/UserTable'
 import AddUserForm from '@/components/AddUserForm'
 import { User, CurrentUser, Role } from '@/app/types'
@@ -37,15 +38,17 @@ export default function UsersPage() {
     }, [])
 
     const checkAuth = async () => {
-        const storedUser = sessionStorage.getItem('user')
-
-        if (!storedUser) {
-            router.push('/admin')
-            return
-        }
-
         try {
-            const userData = JSON.parse(storedUser)
+            const response = await fetch('/api/auth')
+
+            if (!response.ok) {
+                sessionStorage.removeItem('user')
+                router.push('/admin')
+                return
+            }
+
+            const { user: userData } = await response.json()
+            sessionStorage.setItem('user', JSON.stringify(userData))
 
             // Solo admin y super_admin pueden acceder
             if (userData.role !== 'admin' && userData.role !== 'super_admin') {
@@ -67,6 +70,13 @@ export default function UsersPage() {
     const loadUsers = async () => {
         try {
             const response = await fetch('/api/users')
+
+            if (response.status === 401) {
+                sessionStorage.removeItem('user')
+                router.push('/admin')
+                return
+            }
+
             const data = await response.json()
             setUsers(data.users || [])
         } catch (error) {
@@ -224,21 +234,6 @@ export default function UsersPage() {
         }
     }
 
-    const getRoleBadge = (role: Role) => {
-        const badges = {
-            super_admin: { text: 'Super Admin', color: 'bg-purple-600 text-white' },
-            admin: { text: 'Administrador', color: 'bg-blue-600 text-white' },
-            moderator: { text: 'Moderador', color: 'bg-indigo-600 text-white' },
-            viewer: { text: 'Visualizador', color: 'bg-gray-600 text-white' }
-        }
-        const badge = badges[role] || badges.viewer
-        return (
-            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
-                {badge.text}
-            </span>
-        )
-    }
-
     if (isLoading) {
         return (
             // <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
@@ -252,124 +247,87 @@ export default function UsersPage() {
         return null
     }
 
+    const activeCount = users.filter((user) => user.is_active).length
+
     return (
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-6 sm:mb-8">
-                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
-                        <div className="flex-1">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                                Gestión de Usuarios
-                            </h1>
-                            <div className="flex flex-wrap items-center gap-3 mt-2">
-                                <p className="text-sm sm:text-base text-gray-600">
-                                    Administrado por <span className="font-semibold">{currentUser.fullName || currentUser.username}</span>
-                                </p>
-                                {getRoleBadge(currentUser.role)}
-                            </div>
-                        </div>
+        <div className="page-shell">
+            <AppHeader
+                current="usuarios"
+                user={{ name: currentUser.fullName || currentUser.username, role: currentUser.role }}
+                canManageUsers
+                onLogout={async () => {
+                    await fetch('/api/auth', { method: 'DELETE' }).catch((error) => {
+                        console.error('Error cerrando sesión:', error)
+                    })
+                    sessionStorage.removeItem('user')
+                    router.push('/admin')
+                }}
+            />
 
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            <button
-                                onClick={() => router.push('/admin')}
-                                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-                            >
-                                ← Volver a Horarios
-                            </button>
-                            <button
-                                onClick={() => {
-                                    sessionStorage.removeItem('user')
-                                    router.push('/admin')
-                                }}
-                                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-                            >
-                                Cerrar Sesión
-                            </button>
-                        </div>
-                    </div>
+            <main className="page-main">
+                <div className="flex flex-wrap items-end justify-between gap-6">
+                    <h1 className="page-title">Usuarios</h1>
+                    <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary">
+                        {showAddForm ? 'Cerrar' : 'Agregar usuario'}
+                    </button>
+                </div>
 
-                    {/* Alerta informativa */}
-                    <div className="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800 rounded">
-                        <p className="font-semibold text-sm">ℹ️ Información sobre gestión de usuarios</p>
-                        <p className="text-xs mt-1">
-                            Los usuarios pueden tener diferentes niveles de acceso. Solo los Super Administradores pueden eliminar usuarios.
+                {showAddForm && (
+                    <AddUserForm
+                        newUser={newUser}
+                        onChange={setNewUser}
+                        onSubmit={addUser}
+                        onCancel={() => setShowAddForm(false)}
+                        roleConfig={roleConfig}
+                        currentUser={currentUser}
+                    />
+                )}
+
+                <section aria-label="Lista de usuarios" className="mt-14">
+                    <div className="border-b border-spa-line pb-4">
+                        <p className="text-sm text-spa-muted">
+                            <span className="font-mono text-spa-text">{activeCount}</span> activo{activeCount !== 1 ? 's' : ''} de{' '}
+                            <span className="font-mono text-spa-text">{users.length}</span> usuario{users.length !== 1 ? 's' : ''}
                         </p>
                     </div>
-                </div>
 
-                {/* Main Content */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                    <UserTable
+                        users={users}
+                        editingId={editingId}
+                        editForm={editForm}
+                        onEdit={startEdit}
+                        onSave={saveEdit}
+                        onCancel={cancelEdit}
+                        onDelete={deleteUser}
+                        onToggleStatus={toggleUserStatus}
+                        onEditFormChange={setEditForm}
+                        currentUser={currentUser}
+                        roleConfig={roleConfig}
+                    />
+                </section>
+
+                <section aria-labelledby="roles" className="mt-14 border-t border-spa-line pt-6">
+                    <h2 id="roles" className="text-sm text-spa-text">Roles</h2>
+                    <dl className="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                         <div>
-                            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                                Usuarios del Sistema
-                            </h2>
-                            <p className="text-sm text-gray-600 mt-1">
-                                {users.length} usuario{users.length !== 1 ? 's' : ''} registrado{users.length !== 1 ? 's' : ''}
-                            </p>
+                            <dt>Visualizador</dt>
+                            <dd className="mt-1 text-spa-muted">Solo puede ver los horarios.</dd>
                         </div>
-                        <button
-                            onClick={() => setShowAddForm(!showAddForm)}
-                            className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-                        >
-                            {showAddForm ? 'Cancelar' : '+ Agregar Usuario'}
-                        </button>
-                    </div>
-
-                    {/* Add Form */}
-                    {showAddForm && (
-                        <AddUserForm
-                            newUser={newUser}
-                            onChange={setNewUser}
-                            onSubmit={addUser}
-                            onCancel={() => setShowAddForm(false)}
-                            roleConfig={roleConfig}
-                            currentUser={currentUser}
-                        />
-                    )}
-
-                    {/* Table */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <UserTable
-                            users={users}
-                            editingId={editingId}
-                            editForm={editForm}
-                            onEdit={startEdit}
-                            onSave={saveEdit}
-                            onCancel={cancelEdit}
-                            onDelete={deleteUser}
-                            onToggleStatus={toggleUserStatus}
-                            onEditFormChange={setEditForm}
-                            currentUser={currentUser}
-                            roleConfig={roleConfig}
-                        />
-                    </div>
-
-                    {/* Info adicional */}
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2">📝 Información sobre Roles</h3>
-                        <ul className="text-xs text-gray-600 space-y-1 ml-4">
-                            <li>• <strong>Visualizador:</strong> Solo puede ver los horarios, sin permisos de edición</li>
-                            <li>• <strong>Administrador:</strong> Puede ver, agregar y editar horarios y usuarios</li>
-                            {roleConfig.find(r => r.value === 'moderator') && (
-                                <li>• <strong>Moderador:</strong> Permisos de gestión moderada del sistema</li>
-                            )}
-                            <li>• <strong>Super Admin:</strong> Control total incluido eliminar horarios y gestionar usuarios</li>
-                        </ul>
-                    </div>
-
-                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <h3 className="text-sm font-semibold text-yellow-900 mb-2">🔐 Notas de Seguridad</h3>
-                        <ul className="text-xs text-yellow-800 space-y-1 ml-4">
-                            <li>• Las contraseñas deben tener al menos 6 caracteres</li>
-                            <li>• No puedes eliminar tu propio usuario</li>
-                            <li>• Solo Super Administradores pueden eliminar usuarios</li>
-                            <li>• Los usuarios inactivos no pueden iniciar sesión</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+                        <div>
+                            <dt>Moderador</dt>
+                            <dd className="mt-1 text-spa-muted">Gestión moderada del sistema.</dd>
+                        </div>
+                        <div>
+                            <dt>Administrador</dt>
+                            <dd className="mt-1 text-spa-muted">Puede agregar y editar horarios y usuarios.</dd>
+                        </div>
+                        <div>
+                            <dt>Super Admin</dt>
+                            <dd className="mt-1 text-spa-muted">Control total, incluido eliminar.</dd>
+                        </div>
+                    </dl>
+                </section>
+            </main>
         </div>
     )
 }

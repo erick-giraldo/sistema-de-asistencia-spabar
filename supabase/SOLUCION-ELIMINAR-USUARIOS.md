@@ -1,3 +1,5 @@
+> ⚠️ **Guía obsoleta.** La app ya no usa políticas públicas en `users_simple`: accede desde el servidor con `SUPABASE_SERVICE_ROLE_KEY`. `setup-users-rls.sql` ahora elimina esas políticas. No desactives RLS en esta tabla.
+
 # 🔧 Solución: Habilitar Eliminación de Usuarios
 
 ## Problema Identificado

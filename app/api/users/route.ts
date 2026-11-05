@@ -1,12 +1,25 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
+import { hashPassword } from '@/lib/password'
+import { requireRole } from '@/lib/session'
+
+// Nunca incluye la columna password.
+const PUBLIC_COLUMNS = 'id, username, full_name, role, is_active, last_login, created_at'
+const VALID_ROLES = ['viewer', 'moderator', 'admin', 'super_admin']
+
+function forbidden(message: string) {
+    return NextResponse.json({ error: message }, { status: 403 })
+}
 
 // GET - Obtener todos los usuarios
 export async function GET() {
     try {
-        const { data, error } = await supabase
+        const { denied } = await requireRole('admin', 'super_admin')
+        if (denied) return denied
+
+        const { data, error } = await getSupabaseAdmin()
             .from('users_simple')
-            .select('id, username, full_name, role, is_active, last_login, created_at')
+            .select(PUBLIC_COLUMNS)
             .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -24,10 +37,14 @@ export async function GET() {
 // POST - Crear nuevo usuario
 export async function POST(request: Request) {
     try {
+        const { user: currentUser, denied } = await requireRole('admin', 'super_admin')
+        if (denied) return denied
+
         const { username, password, full_name, role } = await request.json()
+        const newRole = role || 'viewer'
 
         // Validaciones
-        if (!username || !password || !full_name) {
+        if (typeof username !== 'string' || typeof password !== 'string' || !username || !password || !full_name) {
             return NextResponse.json(
                 { error: 'Todos los campos son requeridos' },
                 { status: 400 }
@@ -41,12 +58,24 @@ export async function POST(request: Request) {
             )
         }
 
+        if (!VALID_ROLES.includes(newRole)) {
+            return NextResponse.json({ error: 'Rol no válido' }, { status: 400 })
+        }
+
+        if (newRole === 'super_admin' && currentUser.role !== 'super_admin') {
+            return forbidden('Solo un Super Admin puede asignar ese rol')
+        }
+
+        const supabase = getSupabaseAdmin()
+
         // Verificar si el usuario ya existe
-        const { data: existing } = await supabase
+        const { data: existing, error: existingError } = await supabase
             .from('users_simple')
             .select('id')
             .eq('username', username)
-            .single()
+            .maybeSingle()
+
+        if (existingError) throw existingError
 
         if (existing) {
             return NextResponse.json(
@@ -61,13 +90,13 @@ export async function POST(request: Request) {
             .insert([
                 {
                     username,
-                    password, // En producción, usar bcrypt
+                    password: await hashPassword(password),
                     full_name,
-                    role: role || 'viewer',
+                    role: newRole,
                     is_active: true
                 }
             ])
-            .select()
+            .select(PUBLIC_COLUMNS)
 
         if (error) throw error
 
@@ -88,6 +117,9 @@ export async function POST(request: Request) {
 // PUT - Actualizar usuario
 export async function PUT(request: Request) {
     try {
+        const { user: currentUser, denied } = await requireRole('admin', 'super_admin')
+        if (denied) return denied
+
         const body = await request.json()
         const { id, full_name, role, is_active } = body
 
@@ -96,6 +128,34 @@ export async function PUT(request: Request) {
                 { error: 'ID de usuario requerido' },
                 { status: 400 }
             )
+        }
+
+        if (role !== undefined && !VALID_ROLES.includes(role)) {
+            return NextResponse.json({ error: 'Rol no válido' }, { status: 400 })
+        }
+
+        if (is_active === false && id === currentUser.id) {
+            return forbidden('No puedes desactivar tu propio usuario')
+        }
+
+        const supabase = getSupabaseAdmin()
+
+        if (currentUser.role !== 'super_admin') {
+            if (role === 'super_admin') {
+                return forbidden('Solo un Super Admin puede asignar ese rol')
+            }
+
+            const { data: target, error: targetError } = await supabase
+                .from('users_simple')
+                .select('role')
+                .eq('id', id)
+                .maybeSingle()
+
+            if (targetError) throw targetError
+
+            if (target?.role === 'super_admin') {
+                return forbidden('Solo un Super Admin puede modificar a otro Super Admin')
+            }
         }
 
         const updateData: any = {}
@@ -107,7 +167,7 @@ export async function PUT(request: Request) {
             .from('users_simple')
             .update(updateData)
             .eq('id', id)
-            .select()
+            .select(PUBLIC_COLUMNS)
 
         if (error) throw error
 
@@ -128,6 +188,9 @@ export async function PUT(request: Request) {
 // DELETE - Eliminar usuario
 export async function DELETE(request: Request) {
     try {
+        const { user: currentUser, denied } = await requireRole('super_admin')
+        if (denied) return denied
+
         const { id } = await request.json()
 
         if (!id) {
@@ -137,7 +200,11 @@ export async function DELETE(request: Request) {
             )
         }
 
-        const { error } = await supabase
+        if (id === currentUser.id) {
+            return forbidden('No puedes eliminar tu propio usuario')
+        }
+
+        const { error } = await getSupabaseAdmin()
             .from('users_simple')
             .delete()
             .eq('id', id)

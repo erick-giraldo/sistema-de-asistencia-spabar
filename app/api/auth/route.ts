@@ -1,28 +1,36 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
+import { hashPassword, verifyPassword } from '@/lib/password'
+import { endSession, getSessionUser, startSession } from '@/lib/session'
+
+// Iguala el tiempo de respuesta cuando el usuario no existe.
+const dummyHash = hashPassword('usuario-inexistente')
 
 // POST - Login
 export async function POST(request: Request) {
     try {
         const { username, password } = await request.json()
 
-        if (!username || !password) {
+        if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
             return NextResponse.json(
                 { error: 'Usuario y contraseña son requeridos' },
                 { status: 400 }
             )
         }
 
-        // Opción 1: Usando tabla users_simple (desarrollo/demo)
+        const supabase = getSupabaseAdmin()
         const { data, error } = await supabase
             .from('users_simple')
-            .select('id, username, full_name, role')
+            .select('id, username, full_name, role, password')
             .eq('username', username)
-            .eq('password', password)
             .eq('is_active', true)
-            .single()
+            .maybeSingle()
 
-        if (error || !data) {
+        if (error) throw error
+
+        const isValid = await verifyPassword(password, data?.password ?? await dummyHash)
+
+        if (!data || !isValid) {
             return NextResponse.json(
                 { error: 'Usuario o contraseña incorrectos' },
                 { status: 401 }
@@ -35,7 +43,8 @@ export async function POST(request: Request) {
             .update({ last_login: new Date().toISOString() })
             .eq('id', data.id)
 
-        // Retornar datos del usuario
+        startSession(data.id)
+
         return NextResponse.json({
             success: true,
             user: {
@@ -55,33 +64,21 @@ export async function POST(request: Request) {
     }
 }
 
-// GET - Verificar sesión (opcional)
-export async function GET(request: Request) {
+// GET - Verificar sesión
+export async function GET() {
     try {
-        const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
+        const user = await getSessionUser()
 
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID requerido' }, { status: 400 })
-        }
-
-        const { data, error } = await supabase
-            .from('users_simple')
-            .select('id, username, full_name, role')
-            .eq('id', userId)
-            .eq('is_active', true)
-            .single()
-
-        if (error || !data) {
-            return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        if (!user) {
+            return NextResponse.json({ error: 'Sesión no válida' }, { status: 401 })
         }
 
         return NextResponse.json({
             user: {
-                id: data.id,
-                username: data.username,
-                fullName: data.full_name,
-                role: data.role
+                id: user.id,
+                username: user.username,
+                fullName: user.full_name,
+                role: user.role
             }
         })
 
@@ -92,4 +89,10 @@ export async function GET(request: Request) {
             { status: 500 }
         )
     }
+}
+
+// DELETE - Cerrar sesión
+export async function DELETE() {
+    endSession()
+    return NextResponse.json({ success: true })
 }

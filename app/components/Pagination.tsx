@@ -37,28 +37,29 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+    <nav aria-label="Paginación" className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="btn-ghost w-full sm:w-auto"
       >
         Anterior
       </button>
 
-      <div className="flex gap-2 flex-wrap justify-center">
+      <div className="flex flex-wrap justify-center gap-1">
         {getPageNumbers().map((page, index) => (
           page === '...' ? (
-            <span key={`ellipsis-${index}`} className="px-3 py-2 text-sm text-gray-700">
+            <span key={`ellipsis-${index}`} className="inline-flex h-11 w-11 items-center justify-center text-sm text-spa-muted">
               ...
             </span>
           ) : (
             <button
               key={page}
               onClick={() => onPageChange(page as number)}
-              className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              aria-current={currentPage === page ? 'page' : undefined}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-xl font-mono text-[13px] transition-colors ${currentPage === page
+                ? 'bg-spa-text text-spa-bg'
+                : 'text-spa-muted hover:bg-spa-track hover:text-spa-text'
                 }`}
             >
               {page}
@@ -70,10 +71,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="btn-ghost w-full sm:w-auto"
       >
         Siguiente
       </button>
-    </div>
+    </nav>
   )
 }

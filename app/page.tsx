@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInMinutes, getWeek } from 'date-fns'
+import AppHeader from '@/components/AppHeader'
 import AttendanceTable from '@/components/AttendanceTable'
 import { Transaction, Schedule, AttendanceRecord } from '@/app/types'
 import { Button } from '@/components/ui/Button'
@@ -181,122 +182,71 @@ export default function Home() {
     XLSX.writeFile(wb, 'Asistencia_Detallada.xlsx')
   }
 
+  const alertCount = result ? result.filter((record) => record.alerta).length : 0
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                Sistema de Asistencia Spabar
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Procesa archivos de transacciones y genera reportes de asistencia
-              </p>
-            </div>
-            <a
-              href="/admin"
-              className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
-            >
-              Panel Admin
-            </a>
-          </div>
-        </div>
+    <div className="page-shell">
+      <AppHeader current="asistencia" />
 
-        {/* Upload Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">
-            Subir Archivo de Transacciones
-          </h2>
+      <main className="page-main">
+        <h1 className="page-title">Asistencia</h1>
+        <p className="mt-5 max-w-[560px] text-lg leading-normal text-spa-muted">
+          Procesa archivos de transacciones y genera reportes de asistencia.
+        </p>
 
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecciona el archivo Excel (.xlsx)
-              </label>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-              />
-              {file && (
-                <p className="mt-2 text-sm text-gray-600">
-                  Archivo seleccionado: <span className="font-medium">{file.name}</span>
-                </p>
-              )}
-            </div>
+        <section aria-label="Subir archivo" className="mt-14 flex flex-wrap items-stretch gap-3">
+          <label className="relative flex min-h-16 min-w-0 flex-[999_1_420px] cursor-pointer items-center justify-between gap-4 rounded-2xl border border-dashed border-spa-strong px-6 py-3 transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-text hover:border-spa-hover">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="sr-only"
+            />
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="text-[13px] text-spa-muted">Archivo Excel de transacciones (.xlsx)</span>
+              <span className={file ? 'break-all font-mono text-[15px]' : 'text-[15px] text-spa-faint'}>
+                {file ? file.name : 'Ningún archivo seleccionado'}
+              </span>
+            </span>
+            <span className="whitespace-nowrap text-sm">Seleccionar</span>
+          </label>
 
-            {/* <Button
-              loading={processing}
-              message="Procesando..."
-              messageBefore="Procesar Archivo"
-              onSubmit={processFile}
-            /> */}
+          <Button
+            onClick={processFile}
+            size="xl"
+            variant="primary"
+            loading={processing}
+            disabled={!file || processing}
+            loadingText="Procesando..."
+            className="min-h-16 flex-[1_1_200px]"
+          >
+            Procesar archivo
+          </Button>
+        </section>
 
-            <Button
-              onClick={processFile}
-              responsive  // w-full sm:w-auto
-              size="xl"   // px-8 py-3
-              variant="primary"  // bg-blue-600
-              loading={processing}
-              disabled={!file || processing}
-              loadingText={"Procesando..."}
-            >
-              Procesar Archivo
-            </Button>
-            {/* 
-            <button
-              onClick={processFile}
-              disabled={!file || processing}
-              className="w-full sm:w-auto px-8 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {processing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Procesando...
-                </span>
-              ) : (
-                'Procesar Archivo'
-              )}
-            </button> */}
-
-          </div>
-        </div>
-
-        {/* Results Section */}
         {result && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <section aria-labelledby="resultado" className="mt-[72px]">
+            <div className="flex flex-wrap items-end justify-between gap-6 border-b border-spa-line pb-6">
               <div>
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                  Resultado del Análisis
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {result.length} registro{result.length !== 1 ? 's' : ''} procesado{result.length !== 1 ? 's' : ''}
+                <h2 id="resultado" className="text-[28px] tracking-[-0.02em]">Resultado del análisis</h2>
+                <p className="mt-2 text-sm text-spa-muted">
+                  <span className="font-mono text-spa-text">{result.length}</span> registro{result.length !== 1 ? 's' : ''} procesado{result.length !== 1 ? 's' : ''}
+                  {' · '}
+                  <span className="font-mono text-spa-alert">{alertCount}</span> con alerta
                 </p>
               </div>
-              <button
-                onClick={downloadResult}
-                className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <button onClick={downloadResult} className="btn-ghost">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 2v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11" />
                 </svg>
                 Descargar Excel
               </button>
             </div>
 
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <AttendanceTable records={result} />
-            </div>
-          </div>
+            <AttendanceTable records={result} />
+          </section>
         )}
-      </div>
-    </div >
+      </main>
+    </div>
   )
 }

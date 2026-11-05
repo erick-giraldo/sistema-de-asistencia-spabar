@@ -9,6 +9,26 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        spa: {
+          bg: "#24262A",
+          raised: "#2B2D32",
+          line: "#393B40",
+          track: "#3A3D42",
+          strong: "#4A4D52",
+          field: "#63666B",
+          hover: "#7E8186",
+          faint: "#94979B",
+          muted: "#B8BABD",
+          text: "#F4F4F2",
+          accent: "#66F0DC",
+          alert: "#FFC2B3",
+        },
+      },
+      fontFamily: {
+        sans: ["Geist", "system-ui", "sans-serif"],
+        mono: ['"Geist Mono"', "ui-monospace", "monospace"],
+      },
       keyframes: {
         "spabar-spin": { to: { transform: "rotate(360deg)" } },
         "spabar-breathe": {

@@ -2,17 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+html {
+  color-scheme: dark;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  @apply bg-spa-bg font-sans text-spa-text antialiased;
+}
+
+:focus-visible {
+  @apply outline outline-2 outline-offset-2 outline-spa-text;
+}
+
+@layer components {
+  .page-shell {
+    @apply min-h-screen bg-spa-bg text-spa-text;
+  }
+
+  .page-main {
+    @apply mx-auto max-w-[1320px] px-4 pb-24 pt-10 sm:px-8 sm:pt-14;
+  }
+
+  .page-title {
+    @apply text-[clamp(56px,9vw,120px)] font-light leading-none tracking-[-0.04em];
+  }
+
+  /* Convierte el logotipo negro sobre blanco en blanco sobre el fondo de la página. */
+  .logo-on-dark {
+    filter: invert(1);
+    mix-blend-mode: screen;
+  }
+
+  .nav-link {
+    @apply inline-flex min-h-11 items-center px-4 text-sm text-spa-muted transition-colors hover:text-spa-text;
+  }
+
+  .nav-link-current {
+    @apply text-spa-text;
+  }
+
+  .btn-primary {
+    @apply inline-flex min-h-14 items-center justify-center rounded-2xl bg-spa-accent px-7 text-base font-medium text-spa-bg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-solid {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full bg-spa-text px-6 text-sm font-medium text-spa-bg transition hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-spa-strong bg-transparent px-5 text-sm text-spa-text transition-colors hover:border-spa-hover disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .icon-btn {
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-xl text-spa-muted transition-colors hover:bg-spa-track hover:text-spa-text;
+  }
+
+  .field-label {
+    @apply mb-1 block text-[13px] text-spa-muted;
+  }
+
+  .field {
+    @apply min-h-11 w-full border-0 border-b border-spa-field bg-transparent p-0 text-base text-spa-text transition-colors placeholder:text-spa-faint focus:border-spa-text focus:outline-none;
+  }
+
+  .field option {
+    @apply bg-spa-bg text-spa-text;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-spa-line p-6 sm:p-8;
+  }
+
+  .data-th {
+    @apply whitespace-nowrap px-4 py-4 text-left text-xs font-normal text-spa-muted first:pl-0 last:pr-0;
+  }
+
+  .data-row {
+    @apply border-t border-spa-track transition-colors hover:bg-spa-raised;
+  }
+
+  .data-td {
+    @apply whitespace-nowrap px-4 py-3 first:pl-0 last:pr-0;
+  }
+
+  .data-num {
+    @apply font-mono text-[13px];
+  }
 }
 
 @keyframes gif-repeat {
