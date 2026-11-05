@@ -12,7 +12,7 @@ export function SpabarLoader({
     fullScreen = true,
     message = "",
     className = "",
-    backgroundClassName = "bg-white",
+    backgroundClassName = "bg-spa-bg",
     logoSrc = "/spabar-logo.gif",
 }: Props) {
     const inner = (
@@ -26,7 +26,7 @@ export function SpabarLoader({
             aria-live="polite"
         >
             <div className="relative grid place-items-center" aria-hidden="true">
-                <div className="relative w-[360px] h-[150px] sm:w-[520px] sm:h-[200px] bg-white">
+                <div className="logo-on-dark relative w-[360px] h-[150px] sm:w-[520px] sm:h-[200px] bg-white">
                     {/* Ghost izquierda (gris + recorte) */}
                     <div className="absolute inset-0 spabar-ghost spabar-ghost-left spabar-slice-left bg-white">
                         <Image
@@ -67,7 +67,7 @@ export function SpabarLoader({
 
             {/* Texto opcional */}
             {message ? (
-                <p className="text-[22px] font-semibold tracking-[0.2px] text-black/80">
+                <p className="text-[22px] font-semibold tracking-[0.2px] text-spa-text">
                     {message}
                     <span className="spabar-dots" aria-hidden="true">...</span>
                 </p>

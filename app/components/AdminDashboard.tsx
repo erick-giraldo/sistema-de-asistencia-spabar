@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import AppHeader from '@/components/AppHeader'
 import ScheduleTable from '@/components/ScheduleTable'
 import AddScheduleForm from '@/components/AddScheduleForm'
 import Pagination from '@/components/Pagination'
@@ -30,8 +30,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
     const [searchTerm, setSearchTerm] = useState('')
     const [sortField, setSortField] = useState<keyof Schedule>('name')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-
-    const router = useRouter()
 
     // Control de permisos
     const permissions: Permissions = useMemo(() => {
@@ -197,163 +195,109 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         setCurrentPage(1)
     }, [searchTerm, itemsPerPage])
 
-    const getRoleBadge = (role: string) => {
-        const badges = {
-            super_admin: { text: 'Super Admin', color: 'bg-purple-600 text-white' },
-            admin: { text: 'Administrador', color: 'bg-blue-600 text-white' },
-            viewer: { text: 'Visualizador', color: 'bg-gray-600 text-white' }
-        }
-        const badge = badges[role as keyof typeof badges] || badges.viewer
-        return (
-            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
-                {badge.text}
-            </span>
-        )
-    }
+    const total = filteredAndSortedSchedules.length
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-6 sm:mb-8">
-                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
-                        <div className="flex-1">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                                Panel de Administración
-                            </h1>
-                            <div className="flex flex-wrap items-center gap-3 mt-2">
-                                <p className="text-sm sm:text-base text-gray-600">
-                                    Bienvenido, <span className="font-semibold">{user.fullName || user.full_name || user.username}</span>
-                                </p>
-                                {getRoleBadge(user.role)}
-                            </div>
-                        </div>
+        <div className="page-shell">
+            <AppHeader
+                current="horarios"
+                user={{ name: user.fullName || user.full_name || user.username, role: user.role }}
+                canManageUsers={permissions.canAdd}
+                onLogout={onLogout}
+            />
 
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            {permissions.canAdd && (
-                                <button
-                                    onClick={() => router.push('/admin/users')}
-                                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
-                                >
-                                    Gestionar Usuarios
-                                </button>
-                            )}
-                            <button
-                                onClick={() => router.push('/')}
-                                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-                            >
-                                Volver al Inicio
-                            </button>
-                            <button
-                                onClick={onLogout}
-                                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-                            >
-                                Cerrar Sesión
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Alerta para viewers */}
-                    {user.role === 'viewer' && (
-                        <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
-                            <p className="font-semibold text-sm">⚠️ Acceso de Solo Lectura</p>
-                            <p className="text-xs mt-1">
-                                Tienes permisos de visualización únicamente. No puedes editar, agregar o eliminar horarios.
-                            </p>
-                        </div>
+            <main className="page-main">
+                <div className="flex flex-wrap items-end justify-between gap-6">
+                    <h1 className="page-title">Horarios</h1>
+                    {permissions.canAdd && (
+                        <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary">
+                            {showAddForm ? 'Cerrar' : 'Agregar horario'}
+                        </button>
                     )}
                 </div>
 
-                {/* Main Content */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                            Gestión de Horarios
-                        </h2>
-                        {permissions.canAdd && (
-                            <button
-                                onClick={() => setShowAddForm(!showAddForm)}
-                                className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-                            >
-                                {showAddForm ? 'Cancelar' : '+ Agregar Nuevo'}
-                            </button>
-                        )}
-                    </div>
+                {user.role === 'viewer' && (
+                    <p className="mt-8 text-sm text-spa-muted">
+                        <span className="text-spa-text">Acceso de solo lectura.</span> No puedes editar, agregar ni eliminar horarios.
+                    </p>
+                )}
 
-                    {/* Add Form */}
-                    {showAddForm && permissions.canAdd && (
-                        <AddScheduleForm
-                            schedule={newSchedule}
-                            onChange={setNewSchedule}
-                            onSubmit={addSchedule}
-                            onCancel={() => setShowAddForm(false)}
-                        />
-                    )}
+                {showAddForm && permissions.canAdd && (
+                    <AddScheduleForm
+                        schedule={newSchedule}
+                        onChange={setNewSchedule}
+                        onSubmit={addSchedule}
+                        onCancel={() => setShowAddForm(false)}
+                    />
+                )}
 
-                    {/* Search and Filters */}
-                    <div className="mb-6 space-y-4">
-                        <div className="flex flex-col lg:flex-row gap-4">
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por nombre o departamento..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                <section aria-label="Lista de horarios" className="mt-14">
+                    <div className="flex flex-wrap items-end justify-between gap-6 border-b border-spa-line pb-4">
+                        <div className="max-w-[480px] flex-[1_1_320px]">
+                            <label htmlFor="buscar-horario" className="field-label">Buscar</label>
+                            <input
+                                id="buscar-horario"
+                                type="search"
+                                placeholder="Nombre o departamento"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="field border-b-0 text-lg"
+                            />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="horarios-por-pagina" className="text-sm text-spa-muted">Mostrar</label>
+                                <select
+                                    id="horarios-por-pagina"
+                                    value={itemsPerPage}
+                                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                                    className="field w-14 font-mono text-sm"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                </select>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <label className="text-sm text-gray-700 font-medium whitespace-nowrap">
-                                        Mostrar:
-                                    </label>
-                                    <select
-                                        value={itemsPerPage}
-                                        onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                    >
-                                        <option value={5}>5</option>
-                                        <option value={10}>10</option>
-                                        <option value={25}>25</option>
-                                        <option value={50}>50</option>
-                                        <option value={100}>100</option>
-                                    </select>
-                                </div>
-
-                                <div className="text-sm text-gray-600 text-center sm:text-left">
-                                    Mostrando {startIndex + 1}-{Math.min(endIndex, filteredAndSortedSchedules.length)} de {filteredAndSortedSchedules.length}
-                                </div>
-                            </div>
+                            <p className="text-sm text-spa-muted">
+                                {total === 0 ? (
+                                    <><span className="font-mono text-spa-text">0</span> horarios</>
+                                ) : (
+                                    <>
+                                        <span className="font-mono text-spa-text">{startIndex + 1}–{Math.min(endIndex, total)}</span>
+                                        {' de '}
+                                        <span className="font-mono text-spa-text">{total}</span> horarios
+                                    </>
+                                )}
+                            </p>
                         </div>
                     </div>
 
-                    {/* Table */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-                        <ScheduleTable
-                            schedules={currentSchedules}
-                            editingId={editingId}
-                            editForm={editForm}
-                            permissions={permissions}
-                            onEdit={startEdit}
-                            onSave={saveEdit}
-                            onCancel={cancelEdit}
-                            onDelete={deleteSchedule}
-                            onEditFormChange={setEditForm}
-                            sortField={sortField}
-                            sortDirection={sortDirection}
-                            onSort={handleSort}
-                        />
-                    </div>
+                    <ScheduleTable
+                        schedules={currentSchedules}
+                        editingId={editingId}
+                        editForm={editForm}
+                        permissions={permissions}
+                        onEdit={startEdit}
+                        onSave={saveEdit}
+                        onCancel={cancelEdit}
+                        onDelete={deleteSchedule}
+                        onEditFormChange={setEditForm}
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
+                    />
 
-                    {/* Pagination */}
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                     />
-                </div>
-            </div>
+                </section>
+            </main>
         </div>
     )
 }

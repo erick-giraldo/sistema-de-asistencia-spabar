@@ -1,4 +1,5 @@
 import { User, CurrentUser, Role } from '@/app/types'
+import { DeleteIcon, EditIcon } from '@/components/ScheduleTable'
 
 type UserTableProps = {
     users: User[]
@@ -14,6 +15,8 @@ type UserTableProps = {
     roleConfig: { value: Role; label: string; description: string; requiresSuperAdmin?: boolean }[]
 }
 
+const compactField = 'field min-h-10 text-sm'
+
 export default function UserTable({
     users,
     editingId,
@@ -27,20 +30,7 @@ export default function UserTable({
     currentUser,
     roleConfig
 }: UserTableProps) {
-    const getRoleBadge = (role: Role) => {
-        const badges = {
-            super_admin: { text: 'Super Admin', color: 'bg-purple-600 text-white' },
-            admin: { text: 'Administrador', color: 'bg-blue-600 text-white' },
-            moderator: { text: 'Moderador', color: 'bg-indigo-600 text-white' },
-            viewer: { text: 'Visualizador', color: 'bg-gray-600 text-white' }
-        }
-        const badge = badges[role] || badges.viewer
-        return (
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${badge.color}`}>
-                {badge.text}
-            </span>
-        )
-    }
+    const roleLabel = (role: Role) => roleConfig.find((config) => config.value === role)?.label ?? role
 
     const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return 'Nunca'
@@ -55,63 +45,47 @@ export default function UserTable({
 
     return (
         <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <table className="w-full min-w-[960px] border-collapse text-[15px]">
+                <thead>
                     <tr>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            ID
-                        </th>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            Usuario
-                        </th>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            Nombre Completo
-                        </th>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            Rol
-                        </th>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            Estado
-                        </th>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            Último Login
-                        </th>
-                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            Acciones
-                        </th>
+                        <th scope="col" className="data-th">ID</th>
+                        <th scope="col" className="data-th">Usuario</th>
+                        <th scope="col" className="data-th">Nombre completo</th>
+                        <th scope="col" className="data-th">Rol</th>
+                        <th scope="col" className="data-th">Estado</th>
+                        <th scope="col" className="data-th">Último acceso</th>
+                        <th scope="col" className="data-th text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                     {users.length === 0 ? (
                         <tr>
-                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500 text-sm">
+                            <td colSpan={7} className="py-12 text-center text-[15px] text-spa-muted">
                                 No hay usuarios registrados
                             </td>
                         </tr>
                     ) : (
                         users.map((user) => (
-                            <tr key={user.id} className="hover:bg-gray-50">
+                            <tr key={user.id} className="data-row">
                                 {editingId === user.id ? (
                                     <>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap">
-                                            {user.id}
-                                        </td>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                                            {user.username}
-                                        </td>
-                                        <td className="px-3 sm:px-4 py-3">
+                                        <td className="data-td data-num text-spa-muted">{user.id}</td>
+                                        <td className="data-td font-mono text-sm text-spa-muted">{user.username}</td>
+                                        <td className="data-td">
                                             <input
                                                 type="text"
+                                                aria-label="Nombre completo"
                                                 value={editForm.full_name || editForm.fullName || ''}
                                                 onChange={(e) => onEditFormChange({ ...editForm, full_name: e.target.value, fullName: e.target.value })}
-                                                className="w-full min-w-[150px] px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[150px]`}
                                             />
                                         </td>
-                                        <td className="px-3 sm:px-4 py-3">
+                                        <td className="data-td">
                                             <select
+                                                aria-label="Rol"
                                                 value={editForm.role || 'viewer'}
                                                 onChange={(e) => onEditFormChange({ ...editForm, role: e.target.value as Role })}
-                                                className="w-full min-w-[120px] px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[120px]`}
                                             >
                                                 {roleConfig.map((role) => {
                                                     if (role.requiresSuperAdmin && currentUser?.role !== 'super_admin') {
@@ -125,89 +99,75 @@ export default function UserTable({
                                                 })}
                                             </select>
                                         </td>
-                                        <td className="px-3 sm:px-4 py-3">
+                                        <td className="data-td">
                                             <select
+                                                aria-label="Estado"
                                                 value={editForm.is_active ? 'true' : 'false'}
                                                 onChange={(e) => onEditFormChange({ ...editForm, is_active: e.target.value === 'true' })}
-                                                className="w-full min-w-[100px] px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[100px]`}
                                             >
                                                 <option value="true">Activo</option>
                                                 <option value="false">Inactivo</option>
                                             </select>
                                         </td>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                                            {formatDate(user.last_login)}
-                                        </td>
-                                        <td className="px-3 sm:px-4 py-3">
-                                            <div className="flex flex-col sm:flex-row gap-2">
-                                                <button
-                                                    onClick={onSave}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
-                                                >
-                                                    Guardar
-                                                </button>
-                                                <button
-                                                    onClick={onCancel}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-gray-400 rounded hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 whitespace-nowrap"
-                                                >
-                                                    Cancelar
-                                                </button>
+                                        <td className="data-td data-num text-spa-muted">{formatDate(user.last_login)}</td>
+                                        <td className="data-td">
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={onSave} className="btn-solid px-4">Guardar</button>
+                                                <button onClick={onCancel} className="btn-ghost px-4">Cancelar</button>
                                             </div>
                                         </td>
                                     </>
                                 ) : (
                                     <>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap">
-                                            {user.id}
-                                        </td>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-900 whitespace-nowrap">
+                                        <td className="data-td data-num text-spa-muted">{user.id}</td>
+                                        <td className="data-td font-mono text-sm">
                                             {user.username}
                                             {currentUser?.id === user.id && (
-                                                <span className="ml-2 text-xs text-green-600 font-semibold">(Tú)</span>
+                                                <span className="ml-2 font-sans text-xs text-spa-accent">Tú</span>
                                             )}
                                         </td>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                                            {user.full_name || user.fullName || '-'}
+                                        <td className="data-td">{user.full_name || user.fullName || '-'}</td>
+                                        <td className={`data-td text-sm ${user.role === 'super_admin' ? 'text-spa-accent' : user.role === 'viewer' ? 'text-spa-muted' : ''}`}>
+                                            {roleLabel(user.role)}
                                         </td>
-                                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                                            {getRoleBadge(user.role)}
-                                        </td>
-                                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.is_active
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800'
-                                                }`}>
+                                        <td className="data-td">
+                                            <span className={`inline-flex items-center gap-2 text-sm ${user.is_active ? '' : 'text-spa-muted'}`}>
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`h-[7px] w-[7px] rounded-full border ${user.is_active ? 'border-spa-accent bg-spa-accent' : 'border-spa-muted'}`}
+                                                />
                                                 {user.is_active ? 'Activo' : 'Inactivo'}
                                             </span>
                                         </td>
-                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 whitespace-nowrap">
-                                            {formatDate(user.last_login)}
-                                        </td>
-                                        <td className="px-3 sm:px-4 py-3">
-                                            <div className="flex flex-col sm:flex-row gap-2">
+                                        <td className="data-td data-num text-spa-muted">{formatDate(user.last_login)}</td>
+                                        <td className="data-td py-1">
+                                            <div className="flex justify-end gap-1">
                                                 <button
                                                     onClick={() => onEdit(user)}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 whitespace-nowrap"
+                                                    aria-label={`Editar a ${user.username}`}
+                                                    className="icon-btn"
                                                 >
-                                                    Editar
+                                                    <EditIcon />
                                                 </button>
                                                 {currentUser?.role === 'super_admin' && user.id !== currentUser.id && (
                                                     <button
                                                         onClick={() => onToggleStatus(user.id, user.is_active || false)}
-                                                        className={`px-3 py-1.5 text-xs font-medium text-white rounded focus:outline-none focus:ring-2 whitespace-nowrap ${user.is_active
-                                                            ? 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-500'
-                                                            : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
-                                                            }`}
+                                                        aria-label={`${user.is_active ? 'Desactivar' : 'Activar'} a ${user.username}`}
+                                                        className="icon-btn"
                                                     >
-                                                        {user.is_active ? 'Desactivar' : 'Activar'}
+                                                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M8 1.5v6M4.2 3.8a5.5 5.5 0 1 0 7.6 0" />
+                                                        </svg>
                                                     </button>
                                                 )}
                                                 {currentUser?.role === 'super_admin' && user.id !== currentUser.id && (
                                                     <button
                                                         onClick={() => onDelete(user.id)}
-                                                        className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 whitespace-nowrap"
+                                                        aria-label={`Eliminar a ${user.username}`}
+                                                        className="icon-btn"
                                                     >
-                                                        Eliminar
+                                                        <DeleteIcon />
                                                     </button>
                                                 )}
                                             </div>

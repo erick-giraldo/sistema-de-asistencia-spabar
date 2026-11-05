@@ -1,4 +1,5 @@
 import { AttendanceRecord } from '@/app/types'
+import DayTrack from '@/components/ui/DayTrack'
 
 type AttendanceTableProps = {
     records: AttendanceRecord[]
@@ -17,72 +18,44 @@ export default function AttendanceTable({ records }: AttendanceTableProps) {
 
     return (
         <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0">
+            <table className="w-full min-w-[1080px] border-collapse text-sm">
+                <thead>
                     <tr>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Nombre
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Fecha
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Entrada
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Salida
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Hrs Trab
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Tardanza
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Hrs Extra
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Alerta
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Semana
-                        </th>
+                        <th scope="col" className="data-th">Nombre</th>
+                        <th scope="col" className="data-th">Fecha</th>
+                        <th scope="col" className="data-th w-[220px]">Jornada · 06 a 22 h</th>
+                        <th scope="col" className="data-th">Entrada</th>
+                        <th scope="col" className="data-th">Salida</th>
+                        <th scope="col" className="data-th">Hrs trab</th>
+                        <th scope="col" className="data-th">Tardanza</th>
+                        <th scope="col" className="data-th">Hrs extra</th>
+                        <th scope="col" className="data-th">Alerta</th>
+                        <th scope="col" className="data-th">Semana</th>
                     </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                     {records.map((record, idx) => (
-                        <tr key={idx} className={record.alerta ? 'bg-red-50' : 'hover:bg-gray-50'}>
-                            <td className="px-3 py-3 text-sm text-gray-900 whitespace-nowrap">
-                                {record.nombre}
+                        <tr key={idx} className="data-row">
+                            <td className="data-td py-[18px]">{record.nombre}</td>
+                            <td className="data-td data-num text-spa-muted">{record.fecha}</td>
+                            <td className="data-td">
+                                <DayTrack start={record.entradaReal} end={record.salidaReal} alert={Boolean(record.alerta)} />
                             </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.fecha}
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.entradaReal}
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.salidaReal}
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {hoursToHHMMSS(record.horasTrabajadas)}
-                            </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
+                            <td className="data-td data-num">{record.entradaReal}</td>
+                            <td className="data-td data-num">{record.salidaReal}</td>
+                            <td className="data-td data-num">{hoursToHHMMSS(record.horasTrabajadas)}</td>
+                            <td className={`data-td data-num ${record.alerta ? 'text-spa-alert' : record.minTardanza > 0 ? '' : 'text-spa-muted'}`}>
                                 {minutesToHHMMSS(record.minTardanza)}
                             </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {hoursToHHMMSS(record.horasExtra)}
-                            </td>
-                            <td className="px-3 py-3 text-sm whitespace-nowrap">
+                            <td className="data-td data-num">{hoursToHHMMSS(record.horasExtra)}</td>
+                            <td className="data-td">
                                 {record.alerta && (
-                                    <span className="inline-flex px-2 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded-full">
+                                    <span className="inline-block text-xs font-medium lowercase text-spa-alert first-letter:uppercase">
                                         {record.alerta}
                                     </span>
                                 )}
                             </td>
-                            <td className="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {record.semana}
-                            </td>
+                            <td className="data-td data-num text-spa-muted">{record.semana}</td>
                         </tr>
                     ))}
                 </tbody>

@@ -1,4 +1,5 @@
 import { Schedule } from '@/app/types'
+import DayTrack, { DAY_TRACK_HOURS } from '@/components/ui/DayTrack'
 
 type ScheduleTableProps = {
     schedules: Schedule[]
@@ -18,6 +19,8 @@ type ScheduleTableProps = {
     onSort: (field: keyof Schedule) => void
 }
 
+const compactField = 'field min-h-10 text-sm'
+
 export default function ScheduleTable({
     schedules,
     editingId,
@@ -32,186 +35,150 @@ export default function ScheduleTable({
     sortDirection,
     onSort
 }: ScheduleTableProps) {
-    const getSortIcon = (field: keyof Schedule) => {
-        if (sortField !== field) return null
-        return sortDirection === 'asc' ? '↑' : '↓'
-    }
+    const hasActions = permissions.canEdit || permissions.canDelete
+
+    const sortableHeader = (field: keyof Schedule, label: string) => (
+        <th
+            scope="col"
+            className="data-th"
+            aria-sort={sortField === field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+        >
+            <button
+                type="button"
+                onClick={() => onSort(field)}
+                className="inline-flex min-h-6 items-center gap-1 transition-colors hover:text-spa-text"
+            >
+                {label}
+                {sortField === field && <span aria-hidden="true">{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+            </button>
+        </th>
+    )
 
     return (
         <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <table className="w-full min-w-[980px] border-collapse text-[15px]">
+                <thead>
                     <tr>
-                        <th
-                            onClick={() => onSort('id')}
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                        >
-                            <span className="flex items-center gap-1">
-                                ID {getSortIcon('id')}
+                        {sortableHeader('id', 'ID')}
+                        {sortableHeader('name', 'Nombre')}
+                        {sortableHeader('department', 'Departamento')}
+                        <th scope="col" className="data-th w-[32%]">
+                            <span className="sr-only">Jornada</span>
+                            <span aria-hidden="true" className="flex justify-between font-mono">
+                                {DAY_TRACK_HOURS.map((hour) => <span key={hour}>{hour}</span>)}
                             </span>
                         </th>
-                        <th
-                            onClick={() => onSort('name')}
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                        >
-                            <span className="flex items-center gap-1">
-                                Nombre {getSortIcon('name')}
-                            </span>
-                        </th>
-                        <th
-                            onClick={() => onSort('department')}
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                        >
-                            <span className="flex items-center gap-1">
-                                Departamento {getSortIcon('department')}
-                            </span>
-                        </th>
-                        <th
-                            onClick={() => onSort('entryTime')}
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                        >
-                            <span className="flex items-center gap-1">
-                                H. Entrada {getSortIcon('entryTime')}
-                            </span>
-                        </th>
-                        <th
-                            onClick={() => onSort('exitTime')}
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                        >
-                            <span className="flex items-center gap-1">
-                                H. Salida {getSortIcon('exitTime')}
-                            </span>
-                        </th>
-                        <th
-                            onClick={() => onSort('scheduledHours')}
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                        >
-                            <span className="flex items-center gap-1">
-                                Hrs Prog. {getSortIcon('scheduledHours')}
-                            </span>
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Acciones
-                        </th>
+                        {sortableHeader('entryTime', 'Entrada')}
+                        {sortableHeader('exitTime', 'Salida')}
+                        {sortableHeader('scheduledHours', 'Horas')}
+                        {hasActions && <th scope="col" className="data-th text-right">Acciones</th>}
                     </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                     {schedules.length === 0 ? (
                         <tr>
-                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500 text-sm">
+                            <td colSpan={hasActions ? 8 : 7} className="py-12 text-center text-[15px] text-spa-muted">
                                 No hay horarios registrados
                             </td>
                         </tr>
                     ) : (
                         schedules.map((schedule) => (
-                            <tr key={schedule.id} className="hover:bg-gray-50">
+                            <tr key={schedule.id} className="data-row">
                                 {editingId === schedule.id ? (
                                     <>
-                                        <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                                            {schedule.id}
-                                        </td>
-                                        <td className="px-4 py-3">
+                                        <td className="data-td data-num text-spa-muted">{schedule.id}</td>
+                                        <td className="data-td">
                                             <input
                                                 type="text"
+                                                aria-label="Nombre"
                                                 value={editForm.name || ''}
                                                 onChange={(e) => onEditFormChange({ ...editForm, name: e.target.value })}
-                                                className="w-full min-w-[150px] px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[140px]`}
                                             />
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="data-td">
                                             <input
                                                 type="text"
+                                                aria-label="Departamento"
                                                 value={editForm.department || ''}
                                                 onChange={(e) => onEditFormChange({ ...editForm, department: e.target.value })}
-                                                className="w-full min-w-[120px] px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[110px]`}
                                             />
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="data-td">
+                                            <DayTrack start={editForm.entryTime} end={editForm.exitTime} />
+                                        </td>
+                                        <td className="data-td">
                                             <input
                                                 type="time"
+                                                aria-label="Hora de entrada"
                                                 step="1"
                                                 value={editForm.entryTime?.substring(0, 5) || ''}
                                                 onChange={(e) => onEditFormChange({ ...editForm, entryTime: e.target.value + ':00' })}
-                                                className="w-full min-w-[100px] px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[100px] font-mono`}
                                             />
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="data-td">
                                             <input
                                                 type="time"
+                                                aria-label="Hora de salida"
                                                 step="1"
                                                 value={editForm.exitTime?.substring(0, 5) || ''}
                                                 onChange={(e) => onEditFormChange({ ...editForm, exitTime: e.target.value + ':00' })}
-                                                className="w-full min-w-[100px] px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[100px] font-mono`}
                                             />
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="data-td">
                                             <input
                                                 type="number"
+                                                aria-label="Horas programadas"
                                                 value={editForm.scheduledHours || ''}
                                                 onChange={(e) => onEditFormChange({ ...editForm, scheduledHours: parseInt(e.target.value) })}
-                                                className="w-full min-w-[80px] px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className={`${compactField} min-w-[56px] font-mono`}
                                             />
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={onSave}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
-                                                >
-                                                    Guardar
-                                                </button>
-                                                <button
-                                                    onClick={onCancel}
-                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-gray-400 rounded hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 whitespace-nowrap"
-                                                >
-                                                    Cancelar
-                                                </button>
+                                        <td className="data-td">
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={onSave} className="btn-solid px-4">Guardar</button>
+                                                <button onClick={onCancel} className="btn-ghost px-4">Cancelar</button>
                                             </div>
                                         </td>
                                     </>
                                 ) : (
                                     <>
-                                        <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                                            {schedule.id}
+                                        <td className="data-td data-num text-spa-muted">{schedule.id}</td>
+                                        <td className="data-td">{schedule.name}</td>
+                                        <td className="data-td text-sm text-spa-muted">{schedule.department}</td>
+                                        <td className="data-td">
+                                            <DayTrack start={schedule.entryTime} end={schedule.exitTime} />
                                         </td>
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                            {schedule.name}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                            {schedule.department}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                            {schedule.entryTime}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                            {schedule.exitTime}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                            {schedule.scheduledHours}h
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex gap-2">
-                                                {permissions.canEdit && (
-                                                    <button
-                                                        onClick={() => onEdit(schedule)}
-                                                        className="px-3 py-1.5 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 whitespace-nowrap"
-                                                    >
-                                                        Editar
-                                                    </button>
-                                                )}
-                                                {permissions.canDelete && (
-                                                    <button
-                                                        onClick={() => onDelete(schedule.id)}
-                                                        className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 whitespace-nowrap"
-                                                    >
-                                                        Eliminar
-                                                    </button>
-                                                )}
-                                                {!permissions.canEdit && !permissions.canDelete && (
-                                                    <span className="text-xs text-gray-400 italic">Sin permisos</span>
-                                                )}
-                                            </div>
-                                        </td>
+                                        <td className="data-td data-num">{schedule.entryTime?.substring(0, 5)}</td>
+                                        <td className="data-td data-num">{schedule.exitTime?.substring(0, 5)}</td>
+                                        <td className="data-td data-num">{schedule.scheduledHours}</td>
+                                        {hasActions && (
+                                            <td className="data-td py-1">
+                                                <div className="flex justify-end gap-1">
+                                                    {permissions.canEdit && (
+                                                        <button
+                                                            onClick={() => onEdit(schedule)}
+                                                            aria-label={`Editar horario de ${schedule.name}`}
+                                                            className="icon-btn"
+                                                        >
+                                                            <EditIcon />
+                                                        </button>
+                                                    )}
+                                                    {permissions.canDelete && (
+                                                        <button
+                                                            onClick={() => onDelete(schedule.id)}
+                                                            aria-label={`Eliminar horario de ${schedule.name}`}
+                                                            className="icon-btn"
+                                                        >
+                                                            <DeleteIcon />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
                                     </>
                                 )}
                             </tr>
@@ -220,5 +187,21 @@ export default function ScheduleTable({
                 </tbody>
             </table>
         </div>
+    )
+}
+
+export function EditIcon() {
+    return (
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.5 2.5l3 3L5.5 13.5l-3.5.5.5-3.5z" />
+        </svg>
+    )
+}
+
+export function DeleteIcon() {
+    return (
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4" />
+        </svg>
     )
 }
